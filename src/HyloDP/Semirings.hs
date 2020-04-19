@@ -1,6 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 {-|
@@ -14,7 +11,6 @@ This module declares the 'Semiring' class and various instances.
 module HyloDP.Semirings (
   -- *Type Classes
   Semiring(..),
-  DPTypes(..),
   -- *Concrete Semirings
   Probability(..),
   TMin(..), TMax(..),
@@ -25,7 +21,7 @@ module HyloDP.Semirings (
   decisions
 ) where
 
-import Data.Maybe(maybeToList, fromJust)
+import Data.Maybe(fromJust)
 
 -- ----------------------
 -- Typeclass definitions
@@ -72,15 +68,6 @@ class Semiring s where
 
 class Opt t where
   optimum :: t -> t -> t
-
--- DPTypes (defines how to combine score and decision to obtain solution)
-
-class DPTypes sc d sol where
-    combine :: sc -> d -> sol
-
--- trivial instance if the solution is just the score
-instance DPTypes sc d sc where
-    combine = const
 
 -- --------------------
 -- Semiring definitions
@@ -142,12 +129,6 @@ instance Ord v => Opt (TMin v) where
 instance Ord v => Opt (TMax v) where
   optimum = max
 
-instance DPTypes sc d (TMin sc) where
-    combine = const . TMin
-
-instance DPTypes sc d (TMax sc) where
-    combine = const . TMax
-
 -- The 'MaxProd' semiring is the analogous to the 'TMax' semiring
 -- for maximizing products.
 
@@ -165,9 +146,6 @@ instance (Num v, Ord v, Bounded v) => Semiring (MaxProd v) where
 instance Ord v => Opt (MaxProd v) where
   optimum = max
 
-instance DPTypes sc d (MaxProd sc) where
-  combine = const . MaxProd
-
 -- |The 'Count' semiring is used for counting the number of different
 -- solutions.
 
@@ -178,9 +156,6 @@ instance Semiring Count where
   Count n <.> Count n' = Count $ n * n'
   zero = Count 0
   one = Count 1
-
-instance DPTypes sc d Count where
-  combine = const . const $ Count 1
 
 -- |The `BestSolution` semiring is used for recovering the best sequence
 -- of decisions together with its score. The score must be an instance of
@@ -196,12 +171,6 @@ instance (Semiring sc, Opt sc, Eq sc) => Semiring (BestSolution d sc) where
        BestSolution ((++) <$> ds1 <*> ds2) (sc1 <.> sc2)
     zero = BestSolution Nothing zero
     one = BestSolution (Just []) one
-
-instance DPTypes sc d sol => DPTypes sc d (BestSolution d sol) where
-    combine sc d = BestSolution (Just [d]) (combine sc d)
-
-instance DPTypes sc (Maybe d) sol => DPTypes sc (Maybe d) (BestSolution d sol) where
-    combine sc d = BestSolution (Just $ maybeToList d) (combine sc d)
 
 -- |Recover the sequence of decisions from a `BestSolution`
 decisions :: BestSolution d sc -> [d]
@@ -220,12 +189,6 @@ instance Semiring sol => Semiring (AllSolutions d sol) where
   zero = AllSolutions []
   one = AllSolutions [([], one)]
 
-instance DPTypes sc d sol => DPTypes sc d (AllSolutions d sol) where
-  combine sc d = AllSolutions [([d], combine sc d)]
-
-instance DPTypes sc (Maybe d) sol => DPTypes sc (Maybe d) (AllSolutions d sol) where
-  combine sc d = AllSolutions [(maybeToList d, combine sc d)]
-
 -- Tuple of two semirings
 
 instance (Semiring s1, Semiring s2) => Semiring (s1, s2) where
@@ -233,6 +196,3 @@ instance (Semiring s1, Semiring s2) => Semiring (s1, s2) where
   (s1, s2) <.> (s1', s2') = (s1 <.> s1', s2 <.> s2')
   zero = (zero, zero)
   one = (one, one)
-
-instance (DPTypes sc d sol, DPTypes sc d sol') => DPTypes sc d (sol, sol') where
-  combine sc d = (combine sc d, combine sc d)
