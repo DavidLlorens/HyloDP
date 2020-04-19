@@ -15,9 +15,9 @@ import HyloDP.Semirings
 
 -- Dynamic Programming Problem
 
-data DPProblem p sc d = DPProblem { initial2 :: p
-                                  , isTrivial2 :: p -> Bool
-                                  , subproblems2 :: p -> [(sc, d, p)]
+data DPProblem p sc d = DPProblem { initial :: p
+                                  , isTrivial :: p -> Bool
+                                  , subproblems :: p -> [(sc, d, p)]
                                   }
 
 -- DPF
@@ -82,10 +82,10 @@ hyloM alg coalg = h
 -- dpSolve4
 
 dpSolve :: (HasTrie p, Semiring sol, DPTypes sc d sol) => DPProblem p sc d -> sol
-dpSolve dp = hyloM solve build $ initial2 dp
-  where build p | isTrivial2 dp p = Trivial
+dpSolve dp = hyloM solve build $ initial dp
+  where build p | isTrivial dp p = Trivial
                 | otherwise = Children [(combine sc d, sp) |
-                                        (sc, d, sp) <- subproblems2 dp p]
+                                        (sc, d, sp) <- subproblems dp p]
         solve Trivial = one
         solve (Children sols) =
            foldl' (<+>) zero [ sc <.> sol | (sc, sol) <- sols ]
