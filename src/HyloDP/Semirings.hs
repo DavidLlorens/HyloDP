@@ -4,14 +4,26 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module HyloDP.Semirings (
+  -- * Classes
   Semiring(..),
   DPTypes(..),
+  Opt(..),
+  -- * Types
+  -- ** Probability semiring
   Probability(..),
-  TMin(..), TMax(..),
+  -- ** Min tropical semiring
+  TMin(..),
+  -- ** Max tropical semiring
+  TMax(..),
+  -- ** Max product semiring
   MaxProd(..),
+  -- ** Count semiring
   Count(..),
+  -- ** Best solution semiring
   BestSolution(..),
+  -- ** All solutions semiring
   AllSolutions(..),
+  -- * Other functions
   decisions
 ) where
 
@@ -21,8 +33,7 @@ import Data.Maybe(maybeToList, fromJust)
 -- Typeclass definitions
 -- ----------------------
 
--- Semiring
-
+-- | Wikipedia: [Semiring](https://en.wikipedia.org/wiki/Semiring).
 class Semiring s where
     infixl 6 <+>
     (<+>) :: s -> s -> s
@@ -31,17 +42,15 @@ class Semiring s where
     zero  :: s
     one   :: s
 
--- Opt (used in optimization semirings)
-
+-- | This typeclass is used in optimization semirings.
 class Opt t where
   optimum :: t -> t -> t
 
--- DPTypes (defines how to combine score and decision to obtain solution)
-
+-- | The typeclass used for combining a score and a decision to form a solution
 class DPTypes sc d sol where
     combine :: sc -> d -> sol
 
--- trivial instance if the solution is just the score
+-- | Trivial instance if the solution is just the score
 instance DPTypes sc d sc where
     combine = const
 
@@ -49,10 +58,9 @@ instance DPTypes sc d sc where
 -- Semiring definitions
 -- --------------------
 
--- Probability (RandomWalk, TextSegmentation)
-
 newtype Probability = Probability Double deriving(Show, Eq, Ord, Fractional, Num)
 
+-- | Trivial semiring for probabilities (used in 'RandomWalk' and 'TextSegmentation' examples)
 instance Semiring Probability where
   (<+>) = (+)
   (<.>) = (*)
@@ -63,19 +71,21 @@ instance Bounded Probability where
   maxBound = 1
   minBound = 0
 
--- Integer (Fibonacci)
+-- ***********************************************************************************
 
+-- | Trivial semiring for integers (used in 'Fibonacci' example)
 instance Semiring Integer where
   (<+>) = (+)
   (<.>) = (*)
   zero = 0
   one = 1
 
--- Tropical Semirings (Knapsack, EditDistance, LongestCommonSubseq)
+-- ***********************************************************************************
 
 newtype TMin v = TMin v deriving (Eq, Ord, Show)
 newtype TMax v = TMax v deriving (Eq, Ord, Show)
 
+-- | Min tropical semiring. Minimizes the sum of the scores (used in the 'EditDistance' example)
 instance (Num v, Ord v, Bounded v) => Semiring (TMin v) where
   t1 <+> t2 = min t1 t2
   t1@(TMin v1) <.> t2@(TMin v2)
@@ -85,6 +95,7 @@ instance (Num v, Ord v, Bounded v) => Semiring (TMin v) where
   zero = TMin maxBound
   one = TMin 0
 
+-- | Max tropical semiring. Maximizes the sum of the scores  (used in 'Knapsack' and 'LongestCommonSubseq' examples)
 instance (Num v, Ord v, Bounded v) => Semiring (TMax v) where
   t1 <+> t2 = max t1 t2
   t1@(TMax v1) <.> t2@(TMax v2)
@@ -106,10 +117,11 @@ instance DPTypes sc d (TMin sc) where
 instance DPTypes sc d (TMax sc) where
     combine = const . TMax
 
--- MaxProd (TextSegmentation)
+-- ***********************************************************************************
 
 newtype MaxProd v = MaxProd v deriving (Eq, Ord, Show)
 
+-- | Maximize the product of the scores (used in the 'TextSegmentation' example)
 instance (Num v, Ord v, Bounded v) => Semiring (MaxProd v) where
   t1 <+> t2 = max t1 t2
   t1@(MaxProd v1) <.> t2@(MaxProd v2)
@@ -125,10 +137,11 @@ instance Ord v => Opt (MaxProd v) where
 instance DPTypes sc d (MaxProd sc) where
   combine = const . MaxProd
 
--- Count (semiring for counting the number of solutions)
+-- ***********************************************************************************
 
 newtype Count = Count Integer deriving Show
 
+-- | Counts the number of solutions.
 instance Semiring Count where
   Count n <+> Count n' = Count $ n + n'
   Count n <.> Count n' = Count $ n * n'
@@ -138,10 +151,12 @@ instance Semiring Count where
 instance DPTypes sc d Count where
   combine = const . const $ Count 1
 
--- BestSolution. Given an Opt semiring, obtains the decision of the best solution
+-- ***********************************************************************************
 
 data BestSolution d sc = BestSolution (Maybe [d]) sc deriving (Eq, Show)
 
+-- | If we have an 'Opt' semiring (like 'TMax', 'TMin' or 'MaxProd') we can
+-- build this semiring to get both the decisions of the best solution and its score.
 instance (Semiring sc, Opt sc, Eq sc) => Semiring (BestSolution d sc) where
     sol1@(BestSolution _ sc1) <+> sol2@(BestSolution _ sc2)
        | optimum sc1 sc2 == sc1 = sol1
@@ -157,13 +172,15 @@ instance DPTypes sc d sol => DPTypes sc d (BestSolution d sol) where
 instance DPTypes sc (Maybe d) sol => DPTypes sc (Maybe d) (BestSolution d sol) where
     combine sc d = BestSolution (Just $ maybeToList d) (combine sc d)
 
+-- | Extracts the decisions from a BestSolution.
 decisions :: BestSolution d sc -> [d]
 decisions (BestSolution s _) = fromJust s
 
--- AllSolutions
+-- ***********************************************************************************
 
 newtype AllSolutions d s = AllSolutions [([d], s)] deriving Show
 
+-- | Obtains all the solutions as a list of pairs ([decision], score).
 instance Semiring sol => Semiring (AllSolutions d sol) where
   AllSolutions sols <+> AllSolutions sols' = AllSolutions (sols ++ sols')
   AllSolutions sols <.> AllSolutions sols' =
@@ -178,8 +195,7 @@ instance DPTypes sc d sol => DPTypes sc d (AllSolutions d sol) where
 instance DPTypes sc (Maybe d) sol => DPTypes sc (Maybe d) (AllSolutions d sol) where
   combine sc d = AllSolutions [(maybeToList d, combine sc d)]
 
--- Tuple of two semirings
-
+-- | A tuple with two semirings.
 instance (Semiring s1, Semiring s2) => Semiring (s1, s2) where
   (s1, s2) <+> (s1', s2') = (s1 <+> s1', s2 <+> s2')
   (s1, s2) <.> (s1', s2') = (s1 <.> s1', s2 <.> s2')
