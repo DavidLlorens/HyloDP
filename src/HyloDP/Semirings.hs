@@ -3,9 +3,19 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
+{-|
+Module: HyloDP.Semirings
+Description: Declarations of the Semiring class and various instances
+Copyright: (c) David Llorens and Juan Miguel Vilar, 2020
+Stability: experimental
+
+This module declares the 'Semiring' class and various instances.
+-}
 module HyloDP.Semirings (
+  -- *Type Classes
   Semiring(..),
   DPTypes(..),
+  -- *Concrete Semirings
   Probability(..),
   TMin(..), TMax(..),
   MaxProd(..),
@@ -21,14 +31,41 @@ import Data.Maybe(maybeToList, fromJust)
 -- Typeclass definitions
 -- ----------------------
 
--- Semiring
+-- |A 'Semiring' is a type with two operations '<+>' and '<.>' and two
+-- distinguished elements, 'zero' and 'one', which satisfy the following
+-- axioms:
+--
+-- * Conmutativity:
+--
+-- @
+-- a \<+\> b == b \<+\> a
+-- a \<.\> b == b \<.\> a
+-- @ 
+--
+-- * Associativity:
+--
+-- @
+-- a \<+\> (b \<+\> c) == (a \<+\> b) \<+\> c
+-- a \<.\> (b \<.\> c) == (a \<.\> b) \<.\> c
+-- @
+--
+-- * Identity:
+--
+-- @
+-- a \<+\> zero = zero \<+\> a == a
+-- a \<.\> one = one \<.\> a == a
+-- @
+--
+-- * Distributive property: @a \<.\> (b\<+\>c) == (a\<.\>b) \<+\> (a\<.\>c)
 
 class Semiring s where
     infixl 6 <+>
     (<+>) :: s -> s -> s
     infixl 7 <.>
     (<.>) :: s -> s -> s
+    -- |Neutral element for '<+>'
     zero  :: s
+    -- |Neutral element for '<.>'
     one   :: s
 
 -- Opt (used in optimization semirings)
@@ -49,7 +86,7 @@ instance DPTypes sc d sc where
 -- Semiring definitions
 -- --------------------
 
--- Probability (RandomWalk, TextSegmentation)
+-- |The 'Proability' semiring represents doubles in the (0, 1) range.
 
 newtype Probability = Probability Double deriving(Show, Eq, Ord, Fractional, Num)
 
@@ -63,7 +100,7 @@ instance Bounded Probability where
   maxBound = 1
   minBound = 0
 
--- Integer (Fibonacci)
+-- Integer instance
 
 instance Semiring Integer where
   (<+>) = (+)
@@ -71,9 +108,14 @@ instance Semiring Integer where
   zero = 0
   one = 1
 
--- Tropical Semirings (Knapsack, EditDistance, LongestCommonSubseq)
-
+-- |The tropical min semiring, a semiring that uses 'min' as '<+>' and
+-- sum as '<.>'. It is used in problems that ask for minimizing a sum of
+-- values.
 newtype TMin v = TMin v deriving (Eq, Ord, Show)
+
+-- |The tropical max semiring, a semiring that uses 'max' as '<+>' and
+-- sum as '<.>'. It is used in problems that ask for maximizing a sum of
+-- values.
 newtype TMax v = TMax v deriving (Eq, Ord, Show)
 
 instance (Num v, Ord v, Bounded v) => Semiring (TMin v) where
@@ -106,7 +148,8 @@ instance DPTypes sc d (TMin sc) where
 instance DPTypes sc d (TMax sc) where
     combine = const . TMax
 
--- MaxProd (TextSegmentation)
+-- The 'MaxProd' semiring is the analogous to the 'TMax' semiring
+-- for maximizing products.
 
 newtype MaxProd v = MaxProd v deriving (Eq, Ord, Show)
 
@@ -125,7 +168,8 @@ instance Ord v => Opt (MaxProd v) where
 instance DPTypes sc d (MaxProd sc) where
   combine = const . MaxProd
 
--- Count (semiring for counting the number of solutions)
+-- |The 'Count' semiring is used for counting the number of different
+-- solutions.
 
 newtype Count = Count Integer deriving Show
 
@@ -138,7 +182,9 @@ instance Semiring Count where
 instance DPTypes sc d Count where
   combine = const . const $ Count 1
 
--- BestSolution. Given an Opt semiring, obtains the decision of the best solution
+-- |The `BestSolution` semiring is used for recovering the best sequence
+-- of decisions together with its score. The score must be an instance of
+-- 'Opt' to be able to decide which is the best of two scores.
 
 data BestSolution d sc = BestSolution (Maybe [d]) sc deriving (Eq, Show)
 
@@ -157,10 +203,12 @@ instance DPTypes sc d sol => DPTypes sc d (BestSolution d sol) where
 instance DPTypes sc (Maybe d) sol => DPTypes sc (Maybe d) (BestSolution d sol) where
     combine sc d = BestSolution (Just $ maybeToList d) (combine sc d)
 
+-- |Recover the sequence of decisions from a `BestSolution`
 decisions :: BestSolution d sc -> [d]
 decisions (BestSolution s _) = fromJust s
 
--- AllSolutions
+-- |With the 'AllSolutions' semiring it is possible to recover all possible
+-- solutions to a problem.
 
 newtype AllSolutions d s = AllSolutions [([d], s)] deriving Show
 
