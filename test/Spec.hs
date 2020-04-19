@@ -13,13 +13,13 @@ import LongestCommonSubseq
 import RandomWalk
 import TextSegmentation
 
-main :: IO ()
-main = hspec $ do
+testFibonacci =
   describe "Fibonacci" $ do
     let problem = fibDPProblem 100
     it "returns 100th Fibonacci number" $ do
         (dpSolve problem :: Integer) `shouldBe` (354224848179261915075 :: Integer)
 
+testKnapsack=
   describe "Knapsack" $ do
     let capacity = 100
         items = [Item 20 40, Item 30 20, Item 40 50, Item 50 60, Item 20 10]
@@ -31,6 +31,7 @@ main = hspec $ do
         (dpSolve problem :: BestSolution Item (TMax Value)) `shouldBe`
             (BestSolution (Just [Item {value = 30, weight = 20},Item {value = 50, weight = 60},Item {value = 20, weight = 10}]) (TMax 100))
 
+testEditDistance =
   describe "EditDistance" $ do
     let x = "train"
         y = "basin"
@@ -44,17 +45,20 @@ main = hspec $ do
         (dpSolve problem :: BestSolution EDOperation (TMin Int)) `shouldBe`
             (BestSolution (Just [Replace 't' 'b',Replace 'r' 'a',Replace 'a' 's',Keep 'i',Keep 'n']) (TMin 3))
 
-  describe "LongestCommonSubseq" $ do
+testLongestCommonSubsequence =
+  describe "LongestCommonSubsequence" $ do
     forM_ [("train", "rain", "rain"), ("aliada", "alada", "alada"), ("abcd", "efg", "")] $ \(xs, ys, sol) ->
       it ("For: " ++ show xs ++ " " ++ show ys) $ do
         (dpSolve $ lcsDPProblem xs ys :: BestSolution Char (TMax Int)) `shouldBe` (BestSolution (Just sol) (TMax $ length sol))
 
+testRandomWalk =
   describe "RandomWalk" $ do
     let rwDPP = (RW 0 2 6)
         problem = rwDPProblem rwDPP
     it "Probability" $ do
         (dpSolve problem :: Probability) `shouldBe` (Probability 0.453125)
 
+testTextSegmentation =
   describe "TextSegmentation" $ do
     let dictionary = fromList [ ("a", 0.05)
                           , ("acas", 0.01)
@@ -88,3 +92,12 @@ main = hspec $ do
         let problem = tsDPProblem dictionary "ended"
         (dpSolve problem :: BestSolution String (MaxProd Probability)) `shouldBe`
             (BestSolution Nothing (MaxProd (Probability 0.0)))
+
+main :: IO ()
+main = hspec $ do
+    testFibonacci
+    testKnapsack
+    testEditDistance
+    testLongestCommonSubsequence
+    testRandomWalk
+    testTextSegmentation
