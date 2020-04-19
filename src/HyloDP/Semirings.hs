@@ -4,6 +4,7 @@
 Module: HyloDP.Semirings
 Description: Declarations of the Semiring class and various instances
 Copyright: (c) David Llorens and Juan Miguel Vilar, 2020
+License: BSD-3-Clause
 Stability: experimental
 
 This module declares the 'Semiring' class and various instances.
@@ -37,7 +38,9 @@ import Data.Maybe(fromJust)
 -- Typeclass definitions
 -- ----------------------
 
--- |A 'Semiring' is a type with two operations '<+>' and '<.>' and two
+-- | Wikipedia: [Semiring](https://en.wikipedia.org/wiki/Semiring).
+--
+-- A 'Semiring' is a type with two operations '<+>' and '<.>' and two
 -- distinguished elements, 'zero' and 'one', which satisfy the following
 -- axioms:
 --
@@ -46,7 +49,7 @@ import Data.Maybe(fromJust)
 -- @
 -- a \<+\> b == b \<+\> a
 -- a \<.\> b == b \<.\> a
--- @ 
+-- @
 --
 -- * Associativity:
 --
@@ -62,10 +65,11 @@ import Data.Maybe(fromJust)
 -- a \<.\> one = one \<.\> a == a
 -- @
 --
--- * Distributive property: @a \<.\> (b\<+\>c) == (a\<.\>b) \<+\> (a\<.\>c)
-
--- | Wikipedia: [Semiring](https://en.wikipedia.org/wiki/Semiring).
-
+-- * Distributive property:
+--
+-- @
+-- a\<.\> (b\<+\>c) == (a\<.\>b) \<+\> (a\<.\>c)
+-- @
 class Semiring s where
     infixl 6 <+>
     (<+>) :: s -> s -> s
@@ -84,10 +88,9 @@ class Opt t where
 -- Semiring definitions
 -- --------------------
 
--- |The 'Proability' semiring represents doubles in the (0, 1) range.
+-- | The 'Proability' semiring represents doubles in the (0, 1) range.
 newtype Probability = Probability Double deriving(Show, Eq, Ord, Fractional, Num)
 
--- | Trivial semiring for probabilities (used in 'RandomWalk' and 'TextSegmentation' examples)
 instance Semiring Probability where
   (<+>) = (+)
   (<.>) = (*)
@@ -100,7 +103,7 @@ instance Bounded Probability where
 
 -- Integer instance
 
--- | Trivial semiring for integers (used in 'Fibonacci' example)
+-- | Trivial instance for integers
 instance Semiring Integer where
   (<+>) = (+)
   (<.>) = (*)
@@ -117,7 +120,6 @@ newtype TMin v = TMin v deriving (Eq, Ord, Show)
 -- values.
 newtype TMax v = TMax v deriving (Eq, Ord, Show)
 
--- | Min tropical semiring. Minimizes the sum of the scores (used in the 'EditDistance' example)
 instance (Num v, Ord v, Bounded v) => Semiring (TMin v) where
   t1 <+> t2 = min t1 t2
   t1@(TMin v1) <.> t2@(TMin v2)
@@ -127,7 +129,6 @@ instance (Num v, Ord v, Bounded v) => Semiring (TMin v) where
   zero = TMin maxBound
   one = TMin 0
 
--- | Max tropical semiring. Maximizes the sum of the scores  (used in 'Knapsack' and 'LongestCommonSubseq' examples)
 instance (Num v, Ord v, Bounded v) => Semiring (TMax v) where
   t1 <+> t2 = max t1 t2
   t1@(TMax v1) <.> t2@(TMax v2)
@@ -143,12 +144,10 @@ instance Ord v => Opt (TMin v) where
 instance Ord v => Opt (TMax v) where
   optimum = max
 
--- The 'MaxProd' semiring is the analogous to the 'TMax' semiring
+-- | The 'MaxProd' semiring is the analogous to the 'TMax' semiring
 -- for maximizing products.
-
 newtype MaxProd v = MaxProd v deriving (Eq, Ord, Show)
 
--- | Maximize the product of the scores (used in the 'TextSegmentation' example)
 instance (Num v, Ord v, Bounded v) => Semiring (MaxProd v) where
   t1 <+> t2 = max t1 t2
   t1@(MaxProd v1) <.> t2@(MaxProd v2)
@@ -165,7 +164,6 @@ instance Ord v => Opt (MaxProd v) where
 -- solutions.
 newtype Count = Count Integer deriving Show
 
--- | Counts the number of solutions.
 instance Semiring Count where
   Count n <+> Count n' = Count $ n + n'
   Count n <.> Count n' = Count $ n * n'
@@ -174,11 +172,10 @@ instance Semiring Count where
 
 -- |The `BestSolution` semiring is used for recovering the best sequence
 -- of decisions together with its score. The score must be an instance of
--- 'Opt' to be able to decide which is the best of two scores.
+-- 'Opt' to be able to decide which is the best of two scores. Examples
+-- of 'Opt' instances are 'TMin', 'TMax' and 'MaxProd'.
 data BestSolution d sc = BestSolution (Maybe [d]) sc deriving (Eq, Show)
 
--- | If we have an 'Opt' semiring (like 'TMax', 'TMin' or 'MaxProd') we can
--- build this semiring to get both the decisions of the best solution and its score.
 instance (Semiring sc, Opt sc, Eq sc) => Semiring (BestSolution d sc) where
     sol1@(BestSolution _ sc1) <+> sol2@(BestSolution _ sc2)
        | optimum sc1 sc2 == sc1 = sol1
@@ -196,7 +193,6 @@ decisions (BestSolution s _) = fromJust s
 -- solutions to a problem.
 newtype AllSolutions d s = AllSolutions [([d], s)] deriving Show
 
--- | Obtains all the solutions as a list of pairs ([decision], score).
 instance Semiring sol => Semiring (AllSolutions d sol) where
   AllSolutions sols <+> AllSolutions sols' = AllSolutions (sols ++ sols')
   AllSolutions sols <.> AllSolutions sols' =
@@ -205,7 +201,7 @@ instance Semiring sol => Semiring (AllSolutions d sol) where
   zero = AllSolutions []
   one = AllSolutions [([], one)]
 
--- Tuple of two semirings
+-- | Trivial instance for tuples of two semirings.
 instance (Semiring s1, Semiring s2) => Semiring (s1, s2) where
   (s1, s2) <+> (s1', s2') = (s1 <+> s1', s2 <+> s2')
   (s1, s2) <.> (s1', s2') = (s1 <.> s1', s2 <.> s2')

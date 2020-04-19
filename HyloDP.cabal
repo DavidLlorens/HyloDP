@@ -2,7 +2,7 @@ cabal-version:       2.4
 
 name:                HyloDP
 version:             0.1.0.0
-synopsis:            Dynamic Programming in Haskell using hylomorphisms with memoization
+synopsis:            Dynamic Programming in Haskell using hylomorphisms with memoization.
 -- description:
 -- homepage:
 -- bug-reports:
@@ -10,7 +10,7 @@ license:             BSD-3-Clause
 license-file:        LICENSE
 author:              David Llorens <dllorens@uji.es>, Juan Miguel Vilar <jvilar@uji.es>
 maintainer:          David Llorens <dllorens@uji.es>
-copyright:           2020 Jaume I University, Castello (Spain)
+copyright:           David Llorens and Juan Miguel Vilar, 2020
 category:            Recursion, Dynamic Programming
 extra-source-files:  README.md
 stability:           experimental

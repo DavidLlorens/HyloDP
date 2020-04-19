@@ -2,6 +2,17 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
+{-|
+Module: HyloDP.Base
+Description: DP solver aproach using hylomorphims with memoization.
+Copyright: (c) David Llorens and Juan Miguel Vilar, 2020
+License: BSD-3-Clause
+Stability: experimental
+
+This module contains a DP problem solver. The solver input is an instance of
+the class 'DPProblem'. To create this instance the problem must be described
+in terms of how its instances are decomposed into smaller ones.
+-}
 module HyloDP.Base (
      -- ** The Dynamic Programing Problem (DPProblem) type
      DPProblem(..),
