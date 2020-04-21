@@ -1,4 +1,4 @@
-module LongestCommonSubseq where
+module LongestCommonSubsequence where
 
 import HyloDP
 

@@ -9,7 +9,7 @@ import HyloDP
 import Fibonacci
 import Knapsack
 import EditDistance
-import LongestCommonSubseq
+import LongestCommonSubsequence
 import RandomWalk
 import TextSegmentation
 

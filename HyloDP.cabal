@@ -72,6 +72,19 @@ executable RandomWalkMain
     build-depends: HyloDP -any
     hs-source-dirs: examples
 
+executable LongestCommonSubsequenceMain
+    import: shared-properties
+    main-is: LongestCommonSubsequenceMain.hs
+    other-modules: LongestCommonSubsequence
+    build-depends: HyloDP -any
+    hs-source-dirs: examples
+
+executable LongestGrowingSubsequence
+    import: shared-properties
+    main-is: LongestGrowingSubsequence.hs
+    build-depends: HyloDP -any
+    hs-source-dirs: examples
+
 test-suite spec
   import: shared-properties
   type: exitcode-stdio-1.0
@@ -79,7 +92,7 @@ test-suite spec
     Fibonacci,
     Knapsack,
     EditDistance,
-    LongestCommonSubseq,
+    LongestCommonSubsequence,
     RandomWalk,
     TextSegmentation
   hs-source-dirs:

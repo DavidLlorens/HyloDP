@@ -4,20 +4,72 @@
 
 {-|
 Module: HyloDP.Base
-Description: DP solver aproach using hylomorphims with memoization.
+Description: A solver for Dynamic Programming problems
 Copyright: (c) David Llorens and Juan Miguel Vilar, 2020
 License: BSD-3-Clause
 Stability: experimental
 
-This module contains a DP problem solver. The solver input is an instance of
-the class 'DPProblem'. To create this instance the problem must be described
-in terms of how its instances are decomposed into smaller ones.
+This module implements the DP problem solver. Its input is an instance
+of the type 'DPProblem'. This type holds two funcions:
+
+* @isTrivial@ that is true when an instance can be trivially solved.
+
+* @subproblems@ that decompose the instance in smaller subproblems.
+
+It also holds @initial@, the initial instance of the problem, the one
+that you want to solve.
+
+An example is the problem of finding the longest common
+subsequence of two lists (ie, the LCS of @xs@ and @ys@ is a list all whose
+elements appear both in @xs@ and @ys@ in the same order):
+
+* If both @xs@ and @ys@ are empty, the problem is trivial.
+
+* If not, check the heads of @xs@ and @ys@. If they are
+  equal, take it and find the lcs of the tails. If they are different,
+  don't take the element and consider one list and the tail of the
+  other.
+
+In code:
+
+
+> import HyloDP
+> 
+> lcsDPProblem :: Eq a => [a] -> [a] -> DPProblem ([a], [a]) Int (Maybe a)
+> lcsDPProblem xs ys = DPProblem (xs, ys) isTrivial subproblems
+>   where isTrivial (xs, ys) = null xs || null ys
+>         subproblems (l@(x:xs), r@(y:ys))
+>           | x == y = [(1, Just x, (xs, ys))]
+>           | otherwise = [ (0, Nothing, (xs, r))
+>                         , (0, Nothing, (l, ys))
+>                         ]
+> 
+
+
+We use 'Nothing' to signal that the element is dropped and 'Just x' to
+signal that it is taken. Also, when we take an element, the score for
+that decision is one, while dropping the element scores zero.
+
+Now, you can find the number of chars in common between @"train"@ and
+@"raising"@ like this:
+
+
+> print (dpSolve $ lcsDPProblem "train" "raising" :: TMax Int)
+
+But you are probably more interesting in the best solution, so you can
+do
+
+> print (dpSolve $ lcsDPProblem "train" "raising" :: BestSolution Char (TMax Int))
+
+As you can see, by choosing the appropriate semiring you decide what
+result you get.
+
 -}
 module HyloDP.Base (
-     -- ** The Dynamic Programing Problem (DPProblem) type
+     -- ** The Types
      DPProblem(..),
      DPTypes(..),
-     -- ** The Dynamic Programing solver
+     -- ** The Solver
      dpSolve
 ) where
 
@@ -27,20 +79,41 @@ import Data.MemoTrie(HasTrie, memo)
 import HyloDP.Semirings
 
 {-|
-A wrapper type over the problem type that includes how to decompose it. Used types:
+A representation of the problem together with a description on how to
+decompose it. It has three parameter types:
 
-     [@p@]: is the type of the problem.
-     [@sc@]: is the type of the scores.
-     [@d@]: is the type of the decisions.
+* @p@: the type of the instances of the problem.
+
+* @sc@: the type of the score, the quantity that we want to maximize,
+  minimize, etc.
+
+* @d@: the type of the decisions.
+
 -}
 
 data DPProblem p sc d = DPProblem
-     { initial :: p                     -- ^ The current problem
-     , isTrivial :: p -> Bool           -- ^ To check if the current problem is a trivial (non-decomposable) problem
-     , subproblems :: p -> [(sc, d, p)] -- ^ For every valid decision (and its score) builds a tuple (score, decision, subproblem)
+     { initial :: p                     -- ^ The instance of the
+                                        --   problem that has to be solved
+     , isTrivial :: p -> Bool           -- ^ True if a problem is trivial
+     , subproblems :: p -> [(sc, d, p)] -- ^ Returns the decomposition of a problem
      }
 
--- DPTypes (defines how to combine score and decision to obtain solution)
+{- | The class 'DPTypes' is used to associate scores, decisions, and
+solutions. The idea is that the same score for a decision can be
+in different solutions and 'combine' associates it. For instance,
+the score of a decision can be an 'Int', but the solution for a
+maximization problem will be a @TMax Int@ while for a minimization
+problem it will be a @TMin Int@. In other cases, the solution also
+needs the decisions made, so the best solution for a maximization
+problem that picks chars and has integer scores is a @BestSolution
+Char (TMax Int)@. So we have:
+
+> combine 1 'a' :: TMin Int == TMin 1
+> combine 1 'a' :: TMax Int == TMax 1
+> combine 1 'a' :: BestSolution Char (TMax Int) == BestSolution "a" (TMax 1)
+
+This is the mechanism used by 'DPSolve' to choose the result.
+-}
 
 class DPTypes sc d sol where
     combine :: sc -> d -> sol
@@ -73,6 +146,12 @@ instance DPTypes sc d sol => DPTypes sc d (AllSolutions d sol) where
 instance DPTypes sc (Maybe d) sol => DPTypes sc (Maybe d) (AllSolutions d sol) where
     combine sc d = AllSolutions [(maybeToList d, combine sc d)]
 
+instance DPTypes sc d sol => DPTypes sc d (AllBestSolutions d sol) where
+    combine sc d = AllBestSolutions ([[d]], combine sc d)
+
+instance DPTypes sc (Maybe d) sol => DPTypes sc (Maybe d) (AllBestSolutions d sol) where
+    combine sc d = AllBestSolutions ([maybeToList d], combine sc d)
+
 instance (DPTypes sc d sol, DPTypes sc d sol') => DPTypes sc d (sol, sol') where
     combine sc d = (combine sc d, combine sc d)
 
@@ -102,13 +181,17 @@ instance Functor (DPF sc) where
   fmap _ Trivial = Trivial
   fmap f (Children cs) = Children [(sc, f p) | (sc, p) <- cs]
 
--- | The generic Dynamic Programing solver. It takes a 'DPProblem' and return its solution.
--- With the constraint 'HasTrie p' the problem type 'p' can be memoized.
--- With the constraint 'Semiring sol' the result type is a instance of 'Semiring'.
--- With the constraint 'DPTypes sc d sol' it is possible to combine a score and a decision to obtain a solution.
+{- |The function 'dpSolve' solves the 'initial' instance of a
+'DPProblem'. The sol type is a semiring that determines what
+kind of solution (the maximum, the minimum, etc.) is expected, it has
+to be a 'Semiring' whose elements can be constructed from the
+decisions as the scores, as determined by the 'DPTypes' constraint. The
+'HasTrie' constraint ensures that memoization can be used.
+-} 
+
 dpSolve :: ( HasTrie p, Semiring sol, DPTypes sc d sol)
-     => DPProblem p sc d -- ^ The problem wrapped inside a 'DPProblem'.
-     -> sol              -- ^ The solution to the problem. It's a 'Semiring' type.
+     => DPProblem p sc d
+     -> sol
 dpSolve dp = hyloM solve build $ initial dp
   where build p | isTrivial dp p = Trivial
                 | otherwise = Children [(combine sc d, sp) |
