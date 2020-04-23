@@ -79,12 +79,6 @@ executable LongestCommonSubsequenceMain
     build-depends: HyloDP -any
     hs-source-dirs: examples
 
-executable LongestGrowingSubsequence
-    import: shared-properties
-    main-is: LongestGrowingSubsequence.hs
-    build-depends: HyloDP -any
-    hs-source-dirs: examples
-
 test-suite spec
   import: shared-properties
   type: exitcode-stdio-1.0
@@ -101,5 +95,5 @@ test-suite spec
   main-is: Spec.hs
   build-depends:
     containers >= 0.6 && < 0.7,
-    hspec,
+    hspec >= 2.0 && < 3.0,
     HyloDP
