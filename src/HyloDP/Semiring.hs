@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 {-|
-Module: HyloDP.Semirings
+Module: HyloDP.Semiring
 Description: Declaration of the Semiring class and various instances
 Copyright: (c) David Llorens and Juan Miguel Vilar, 2020
 License: BSD-3-Clause
@@ -9,13 +9,11 @@ Stability: experimental
 
 This module declares the 'Semiring' class and various instances.
 -}
-module HyloDP.Semirings (
+module HyloDP.Semiring (
   -- *Type Classes
   Semiring(..),
   Opt(..),
-  -- *Concrete Semirings
-  -- ** Probability semiring
-  Probability(..),
+  -- *Semiring Helpers
   -- ** Min tropical semiring
   TMin(..),
   -- ** Max tropical semiring
@@ -88,19 +86,6 @@ class Opt t where
 -- --------------------
 -- Semiring definitions
 -- --------------------
-
--- | The 'Proability' semiring represents doubles in the (0, 1) range.
-newtype Probability = Probability Double deriving(Show, Eq, Ord, Fractional, Num)
-
-instance Semiring Probability where
-  (<+>) = (+)
-  (<.>) = (*)
-  zero = 0
-  one = 1
-
-instance Bounded Probability where
-  maxBound = 1
-  minBound = 0
 
 -- Number instances
 

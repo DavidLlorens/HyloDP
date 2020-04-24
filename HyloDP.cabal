@@ -31,7 +31,7 @@ library
     import: shared-properties
     exposed-modules:
         HyloDP.Base
-        HyloDP.Semirings
+        HyloDP.Semiring
         HyloDP
     hs-source-dirs: src
 
@@ -52,7 +52,7 @@ executable FibonacciMain
 executable TextSegmentationMain
     import: shared-properties
     main-is: TextSegmentationMain.hs
-    other-modules: TextSegmentation
+    other-modules: TextSegmentation, Probability
     build-depends:
         containers >= 0.6 && < 0.7,
         HyloDP -any
@@ -68,7 +68,7 @@ executable KnapsackMain
 executable RandomWalkMain
     import: shared-properties
     main-is: RandomWalkMain.hs
-    other-modules: RandomWalk
+    other-modules: RandomWalk, Probability
     build-depends: HyloDP -any
     hs-source-dirs: examples
 
@@ -87,6 +87,7 @@ test-suite spec
     Knapsack,
     EditDistance,
     LongestCommonSubsequence,
+    Probability
     RandomWalk,
     TextSegmentation
   hs-source-dirs:

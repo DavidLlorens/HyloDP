@@ -5,6 +5,8 @@ import Control.Monad (forM_)
 -- For TextSegmentation
 import Data.Map(fromList)
 
+import Probability
+
 import HyloDP
 import Fibonacci
 import Knapsack

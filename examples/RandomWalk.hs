@@ -10,6 +10,7 @@ import Data.MemoTrie
 import GHC.Generics(Generic)
 
 import HyloDP
+import Probability
 
 type Position = Int
 type Step = Int

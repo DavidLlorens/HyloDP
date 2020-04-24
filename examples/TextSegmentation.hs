@@ -5,6 +5,7 @@ import qualified Data.Map.Strict as M
 import Data.List(inits, tails)
 
 import HyloDP
+import Probability
 
 type Dictionary = Map String Probability
 

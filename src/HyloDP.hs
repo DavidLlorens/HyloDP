@@ -29,11 +29,11 @@ module HyloDP
 (
   -- * Exported modules
   -- **The implementation of the solver.
-  module HyloDP.Base, 
+  module HyloDP.Base,
   -- **Semirings for diferent solution types.
-  module HyloDP.Semirings 
+  module HyloDP.Semiring
 )
 where
 
 import HyloDP.Base
-import HyloDP.Semirings
+import HyloDP.Semiring

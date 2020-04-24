@@ -76,7 +76,7 @@ module HyloDP.Base (
 import Data.List(foldl')
 import Data.Maybe(maybeToList)
 import Data.MemoTrie(HasTrie, memo)
-import HyloDP.Semirings
+import HyloDP.Semiring
 
 {-|
 A representation of the problem together with a description on how to
