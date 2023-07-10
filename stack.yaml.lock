@@ -3,10 +3,17 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: MemoTrie-0.6.10@sha256:e31ca1473059ee8256738869520e68cef374b179e9b1eec15b181cbfd599702d,1516
+    pantry-tree:
+      sha256: b7d45a28c505bde6517d1a9c1e7fe567fc4c9df6ff4f7267b9b59a7b404b9932
+      size: 274
+  original:
+    hackage: MemoTrie-0.6.10
 snapshots:
 - completed:
-    size: 496635
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/13/12.yaml
-    sha256: 67b74d6acad1342ba8089b75f415c1c63897e3f32091863c921104e8d0bdcfa0
-  original: lts-13.12
+    sha256: 9a74d76d250a455d9cd11e74f157e087787fa9aa3c4264e69c94703d1e71aede
+    size: 619200
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/19/30.yaml
+  original: lts-19.30
