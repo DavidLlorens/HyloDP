@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveFunctor #-}
 
 {-|
 Module: HyloDP.Base
@@ -34,7 +35,7 @@ In code:
 
 
 > import HyloDP
-> 
+>
 > lcsDPProblem :: Eq a => [a] -> [a] -> DPProblem ([a], [a]) Int (Maybe a)
 > lcsDPProblem xs ys = DPProblem (xs, ys) isTrivial subproblems
 >   where isTrivial (xs, ys) = null xs || null ys
@@ -43,7 +44,7 @@ In code:
 >           | otherwise = [ (0, Nothing, (xs, r))
 >                         , (0, Nothing, (l, ys))
 >                         ]
-> 
+>
 
 
 We use 'Nothing' to signal that the element is dropped and 'Just x' to
@@ -174,12 +175,7 @@ hyloM alg coalg = h
      where h = memo $ alg . fmap h . coalg
 
 -- | The 'Functor' needed by our algebra and coalgebra
-data DPF sc p = Trivial | Children [(sc, p)]
-
--- | The Functor instance
-instance Functor (DPF sc) where
-  fmap _ Trivial = Trivial
-  fmap f (Children cs) = Children [(sc, f p) | (sc, p) <- cs]
+data DPF sc p = Trivial | Children [(sc, p)] deriving Functor
 
 {- |The function 'dpSolve' solves the 'initial' instance of a
 'DPProblem'. The sol type is a semiring that determines what
@@ -187,7 +183,7 @@ kind of solution (the maximum, the minimum, etc.) is expected, it has
 to be a 'Semiring' whose elements can be constructed from the
 decisions as the scores, as determined by the 'DPTypes' constraint. The
 'HasTrie' constraint ensures that memoization can be used.
--} 
+-}
 
 dpSolve :: ( HasTrie p, Semiring sol, DPTypes sc d sol)
      => DPProblem p sc d

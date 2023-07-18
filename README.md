@@ -30,5 +30,5 @@ example.
 * The library is contained in the [src](https://github.com/DavidLlorens/HyloDP/tree/master/src) directory.
 * The [test](https://github.com/DavidLlorens/HyloDP/tree/master/test) directory contains several HSpec tests.
 * There are six examples in the [examples](https://github.com/DavidLlorens/HyloDP/tree/master/examples) directory.
-* The  `run-executables.sh` script runs all the examples.
+* The  `run-examples.sh` script runs all the examples.
 * The  `generate-doc.sh` script generates the haddock documentation.
