@@ -8,7 +8,7 @@ This package contains the code of the research article:
 Software: Practice and Experience (ISSN:1097-024X)
 >"Easily solving dynamic programming problems in Haskell by memoization of hylomorphisms" by D.Llorens and J.M. Vilar. Software: Practice and Experience (ISSN:1097-024X). 2020; 50: 2193–2211. [https://doi.org/10.1002/spe.2887](https://doi.org/10.1002/spe.2887).
 
-A preliminary version of the paper can be downloaded from [here](https://repositori.uji.es/xmlui/bitstream/handle/10234/191226/71752.pdf?sequence=1).
+A preliminary version of the paper can be downloaded from [here](https://repositori.uji.es/xmlui/bitstream/handle/10234/191226/71752.pdf).
 
 The core ideas are:
 
@@ -31,4 +31,4 @@ example.
 * The [test](https://github.com/DavidLlorens/HyloDP/tree/master/test) directory contains several HSpec tests.
 * There are six examples in the [examples](https://github.com/DavidLlorens/HyloDP/tree/master/examples) directory.
 * The  `run-examples.sh` script runs all the examples.
-* The  `generate-doc.sh` script generates the haddock documentation.
+* This library is implemented as a package [on Hackage](https://hackage.haskell.org/package/HyloDP).
